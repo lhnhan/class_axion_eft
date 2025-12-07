@@ -1195,6 +1195,11 @@ int output_background(
       fprintf(backfile,"# --> tau in the derivative of V(phi) is given in units of Mpc.\n");
       fprintf(backfile,"# --> the potential V(phi) is given in units of m_Pl^2/Mpc^2.\n");
     }
+    /* Axion (Nhan) */
+    if (pba->has_ax == _TRUE_){
+      fprintf(backfile,"# The units of psi is the following:\n");
+      fprintf(backfile,"# --> psi is dimensionless\n");
+    }
   }
 
   output_print_data(backfile,

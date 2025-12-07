@@ -404,6 +404,9 @@ int background_functions(
      p_prime = a_prime_over_a * dp_dloga = a_prime_over_a * Sum [ (w_prime/a_prime_over_a -3(1+w)w)rho].
      Note: The scalar field contribution must be added in the end, as an exception!*/
   double dp_dloga;
+  /* axion quantities (Nhan) */
+  double re_psi, im_psi, sqr_m, sqr_psi, m_over_H;
+  double cos_mt, sin_mt, cos_2mt, sin_2mt;
 
   /** - initialize local variables */
   rho_tot = 0.;
@@ -572,6 +575,40 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_idr];
   }
 
+  /* Axion (Nhan) */
+  // Placing this last to get the total energy density of other species for backreaction
+  if (pba->has_ax == _TRUE_) {
+    re_psi = pvecback_B[pba->index_bi_re_psi_ax];
+    im_psi = pvecback_B[pba->index_bi_im_psi_ax];
+    pvecback[pba->index_bg_re_psi_ax] = re_psi; // value of the real part of wavefunction psi
+    pvecback[pba->index_bg_im_psi_ax] = im_psi; // value of the imaginary part of wavefunction psi
+    // Adding backreactions...
+    pvecback[pba->index_bg_rho_no_ax] = rho_tot;
+    sqr_m = pba->ma_over_hbar*pba->ma_over_hbar;
+    m_over_H = pba->ma_over_hbar/sqrt(pvecback[pba->index_bg_rho_no_ax]);
+    cos_2mt = cos(2.*pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+    sin_2mt = sin(2.*pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+    sqr_psi = re_psi*re_psi + im_psi*im_psi; // absolute square of the wavefunction
+    if (m_over_H < pba->eps_ax) {
+      pvecback[pba->index_bg_rho_ax] = (sqr_m/3.)*sqr_psi; // exact energy of the axion.
+      pvecback[pba->index_bg_p_ax] = - (sqr_m/3.)*(cos_2mt*(re_psi*re_psi - im_psi*im_psi) + 2.*sin_2mt*re_psi*im_psi); // exact pressure of the axion.
+      /** Compute phi from psi: */
+      cos_mt = cos(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+      sin_mt = sin(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+      pvecback[pba->index_bg_phi_ax] = sqrt(2.)*(cos_mt*re_psi + sin_mt*im_psi);
+      pvecback[pba->index_bg_phi_prime_ax] = sqrt(2.)*pba->ma_over_hbar*(cos_mt*im_psi - sin_mt*re_psi);
+    } else {
+      pvecback[pba->index_bg_rho_ax] = sqr_m*(sqr_psi/3. + sqr_psi*sqr_psi/32.); // effective energy of the axion.
+      pvecback[pba->index_bg_p_ax] = (9./32.)*sqr_m*sqr_psi*sqr_psi; // effective pressure of the axion.
+      /** Compute phi from psi: */
+      pvecback[pba->index_bg_phi_ax] = 0.; //Recovering scalar field
+      pvecback[pba->index_bg_phi_prime_ax] = 0.; //Recovering scalar field
+    }
+    rho_tot += pvecback[pba->index_bg_rho_ax];
+    p_tot += pvecback[pba->index_bg_p_ax];
+    dp_dloga += 0.0;
+  }
+
   /** - compute expansion rate H from Friedmann equation: this is the
       only place where the Friedmann equation is assumed. Remember
       that densities are all expressed in units of \f$ [3c^2/8\pi G] \f$, ie
@@ -594,6 +631,15 @@ int background_functions(
     pvecback[pba->index_bg_p_prime_scf] = pvecback[pba->index_bg_phi_prime_scf]*
       (-pvecback[pba->index_bg_phi_prime_scf]*pvecback[pba->index_bg_H]/a-2./3.*pvecback[pba->index_bg_dV_scf]);
     pvecback[pba->index_bg_p_tot_prime] += pvecback[pba->index_bg_p_prime_scf];
+  }
+  /* Axion (Nhan) */
+  if (pba->has_ax == _TRUE_) {
+    if (m_over_H < pba->eps_ax) {
+      pvecback[pba->index_bg_p_tot_prime] += - pvecback[pba->index_bg_p_ax] - sqr_m*sqr_psi 
+        - (2./3.)*sqr_m*(pba->ma_over_hbar/pvecback[pba->index_bg_H])*(2.*cos_2mt*re_psi*im_psi - sin_2mt*(re_psi*re_psi - im_psi*im_psi));
+    } else {
+      pvecback[pba->index_bg_p_tot_prime] += - (27./16.)*(pba->ma_over_hbar*pba->ma_over_hbar)*sqr_psi*sqr_psi;
+    }
   }
 
   /** - compute critical density */
@@ -981,6 +1027,7 @@ int background_indices(
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
   pba->has_scf = _FALSE_;
+  pba->has_ax = _FALSE_; // (Nhan)
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
   pba->has_ur = _FALSE_;
@@ -1005,6 +1052,10 @@ int background_indices(
 
   if (pba->Omega0_scf != 0.)
     pba->has_scf = _TRUE_;
+
+  /* Axion (Nhan) */
+  if (pba->phi_ini_ax != 0.)
+    pba->has_ax = _TRUE_;
 
   if (pba->Omega0_lambda != 0.)
     pba->has_lambda = _TRUE_;
@@ -1072,6 +1123,15 @@ int background_indices(
   class_define_index(pba->index_bg_rho_scf,pba->has_scf,index_bg,1);
   class_define_index(pba->index_bg_p_scf,pba->has_scf,index_bg,1);
   class_define_index(pba->index_bg_p_prime_scf,pba->has_scf,index_bg,1);
+
+  /* - indices for axion wavefunction (Nhan) */
+  class_define_index(pba->index_bg_re_psi_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_im_psi_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_phi_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_phi_prime_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_rho_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_p_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_rho_no_ax,pba->has_ax,index_bg,1);
 
   /* - index for Lambda */
   class_define_index(pba->index_bg_rho_lambda,pba->has_lambda,index_bg,1);
@@ -1168,6 +1228,10 @@ int background_indices(
   /* -> scalar field and its derivative wrt conformal time (Zuma) */
   class_define_index(pba->index_bi_phi_scf,pba->has_scf,index_bi,1);
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
+
+  /* -> wavefunction and its derivative wrt conformal time (Nhan) */
+  class_define_index(pba->index_bi_re_psi_ax,pba->has_ax,index_bi,1);
+  class_define_index(pba->index_bi_im_psi_ax,pba->has_ax,index_bi,1);
 
   /* End of {B} variables */
   pba->bi_B_size = index_bi;
@@ -2087,6 +2151,11 @@ int background_solve(
       }
       printf("%.3f]\n",pba->scf_parameters[pba->scf_parameters_size-1]);
     }
+    /* Axion (Nhan) */
+    if (pba->has_scf == _TRUE_) {
+      printf("    Axion details:\n");
+      printf("     -> phi_ini = %g GeV, mass = %g eV\n", pba->phi_ini_ax, pba->mass_ax);
+    }
   }
 
   /**  - store information in the background structure */
@@ -2147,6 +2216,7 @@ int background_initial_conditions(
   double f,Omega_rad, rho_rad;
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
+  double ax_ini_density; // (Nhan)
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
 
@@ -2290,6 +2360,16 @@ int background_initial_conditions(
                "initial phi = %e phi_prime = %e -> check initial conditions",
                pvecback_integration[pba->index_bi_phi_scf],
                pvecback_integration[pba->index_bi_phi_scf]);
+  }
+
+  /* Axion (Nhan). Move here to get proper time for the full equation */
+  if (pba->has_ax == _TRUE_) {
+    /* (8 pi G/3)rho_ini in (geometrized) units of Mpc^-2 */
+    ax_ini_density = ((8.*_PI_*_G_/3.)*((pow(pba->mass_ax*(pba->phi_ini_ax*1.e9),2)/2.)*pow(_eV_,4)/pow(_h_P_/2/_PI_,3)/pow(_c_,5)))/_c_/_c_*_Mpc_over_m_*_Mpc_over_m_;
+    /* Dimensionless psi_ini */
+    pvecback_integration[pba->index_bi_re_psi_ax] = sqrt(3.*ax_ini_density/pba->ma_over_hbar/pba->ma_over_hbar);
+    pvecback_integration[pba->index_bi_im_psi_ax] = 0.;
+    printf(" Initial psi = %.4e \n ",pvecback_integration[pba->index_bi_re_psi_ax]);
   }
 
   /* Infer pvecback from pvecback_integration */
@@ -2467,6 +2547,15 @@ int background_output_titles(
   class_store_columntitle(titles,"V'_scf",pba->has_scf);
   class_store_columntitle(titles,"V''_scf",pba->has_scf);
 
+  /* Axion (Nhan) */
+  class_store_columntitle(titles,"(.)rho_ax",pba->has_ax);
+  class_store_columntitle(titles,"(.)p_ax",pba->has_ax);
+  class_store_columntitle(titles,"re_psi_ax",pba->has_ax);
+  class_store_columntitle(titles,"im_psi_ax",pba->has_ax);
+  class_store_columntitle(titles,"phi_ax",pba->has_ax);
+  class_store_columntitle(titles,"phi'_ax",pba->has_ax);
+  class_store_columntitle(titles,"(.)rho_tot_no_ax",pba->has_ax);
+
   class_store_columntitle(titles,"(.)rho_tot",_TRUE_);
   class_store_columntitle(titles,"(.)p_tot",_TRUE_);
   class_store_columntitle(titles,"(.)p_tot_prime",_TRUE_);
@@ -2540,6 +2629,15 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_dV_scf],pba->has_scf,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_ddV_scf],pba->has_scf,storeidx);
 
+    /* Axion (Nhan) */
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_p_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_re_psi_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_im_psi_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_phi_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_no_ax],pba->has_ax,storeidx);
+
     class_store_double(dataptr,pvecback[pba->index_bg_rho_tot],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_tot],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_tot_prime],_TRUE_,storeidx);
@@ -2597,6 +2695,8 @@ int background_derivs(
   struct background_parameters_and_workspace * pbpaw;
   struct background * pba;
   double * pvecback, a, H, rho_M;
+  /* Axion (Nhan) */
+  double m_over_H, sqr_psi, re_psi, im_psi, cos_2mt, sin_2mt;
 
   pbpaw = parameters_and_workspace;
   pba =  pbpaw->pba;
@@ -2660,6 +2760,27 @@ int background_derivs(
     dy[pba->index_bi_phi_scf] = y[pba->index_bi_phi_prime_scf]/a/H;
     dy[pba->index_bi_phi_prime_scf] = - 2*y[pba->index_bi_phi_prime_scf] - a*dV_scf(pba,y[pba->index_bi_phi_scf])/H ;
   }
+
+  /* Axion (Nhan) */
+  if (pba->has_ax == _TRUE_) {
+    re_psi = y[pba->index_bi_re_psi_ax];
+    im_psi = y[pba->index_bi_im_psi_ax];
+    m_over_H = pba->ma_over_hbar/sqrt(pvecback[pba->index_bg_rho_no_ax]);
+    sqr_psi = re_psi*re_psi + im_psi*im_psi;
+    cos_2mt = cos(2.*pba->ma_over_hbar*y[pba->index_bi_time]);
+    sin_2mt = sin(2.*pba->ma_over_hbar*y[pba->index_bi_time]);
+    /** Dimensionless wavefunction equation: */
+    if (m_over_H < pba->eps_ax) {
+      /** Exact equation for phi: */
+      dy[pba->index_bi_re_psi_ax] = - (3./2.)*re_psi + (3./2.)*(cos_2mt*re_psi + sin_2mt*im_psi);
+      dy[pba->index_bi_im_psi_ax] = - (3./2.)*im_psi + (3./2.)*(sin_2mt*re_psi - cos_2mt*im_psi);;
+    } else {
+      /** Effective equation for psi: */
+      dy[pba->index_bi_re_psi_ax] = - (3./2.)*re_psi - (9./16.)*m_over_H*sqr_psi*im_psi - (9./32.)*sqr_psi*re_psi;
+      dy[pba->index_bi_im_psi_ax] = - (3./2.)*im_psi + (9./16.)*m_over_H*sqr_psi*re_psi - (9./32.)*sqr_psi*im_psi;
+    }
+  }
+
 
   return _SUCCESS_;
 
@@ -2838,7 +2959,8 @@ int background_output_budget(
       budget_radiation+=pba->Omega0_idr;
     }
 
-    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_curvature == _TRUE_)) {
+    /* Axion (Nhan) */
+    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_ax == _TRUE_) || (pba->has_curvature == _TRUE_)) {
       printf(" ---> Other Content \n");
     }
     if (pba->has_lambda == _TRUE_) {
@@ -2853,6 +2975,9 @@ int background_output_budget(
       class_print_species("Scalar Field",scf);
       budget_other+=pba->Omega0_scf;
     }
+    if (pba->has_ax == _TRUE_) {
+      // Add something here
+    }
     if (pba->has_curvature == _TRUE_) {
       class_print_species("Spatial Curvature",k);
       budget_other+=pba->Omega0_k;
@@ -2865,7 +2990,8 @@ int background_output_budget(
       printf(" - Non-Free-Streaming Matter      Omega = %-15g , omega = %-15g \n",pba->Omega0_nfsm,pba->Omega0_nfsm*pba->h*pba->h);
       printf(" - Non-Cold Dark Matter           Omega = %-15g , omega = %-15g \n",budget_neutrino,budget_neutrino*pba->h*pba->h);
     }
-    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_curvature == _TRUE_)) {
+    /* Axion (Nhan) */
+    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_ax == _TRUE_) || (pba->has_curvature == _TRUE_)) {
       printf(" Other Content                    Omega = %-15g , omega = %-15g \n",budget_other,budget_other*pba->h*pba->h);
     }
     printf(" TOTAL                            Omega = %-15g , omega = %-15g \n",budget_radiation+budget_matter+budget_other,(budget_radiation+budget_matter+budget_other)*pba->h*pba->h);

@@ -2372,6 +2372,10 @@ int hmcode_noradiation_growth_init(
   class_test(pba->Omega0_scf>0,
              pfo->error_message,
              "Cannot use scalar field scf with HMcode (not yet coded)");
+  /* Axion (Nhan) */
+  class_test(pba->phi_ini_ax>0,
+             pfo->error_message,
+             "Cannot use axion with HMcode (not yet coded)");
 
   class_call(hmcode_noradiation_growth_compute(pfo, phw),
              phw->phg->error_message,

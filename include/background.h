@@ -118,6 +118,14 @@ struct background
   double phi_ini_scf;      /**< \f$ \phi(t_0) \f$: scalar field initial value */
   double phi_prime_ini_scf;/**< \f$ d\phi(t_0)/d\tau \f$: scalar field initial derivative wrt conformal time */
   int scf_parameters_size; /**< size of scf_parameters */
+
+  /* Axion (Nhan) */
+  double phi_ini_ax;      /**< axion initial value (units of GeV) */
+  double mass_ax;         /**< mass of axion (units of eV) */
+  double ma_over_hbar;    /**< mass of axion over hbar (geometrized units of Mpc^-1) */
+  double lambda_ax;       /**< self-interaction strength of axion (units of ...) */
+  double eps_ax;          /**< m/H ratio for transition to effective description */
+
   double varconst_alpha; /**< finestructure constant for varying fundamental constants */
   double varconst_me; /**< electron mass for varying fundamental constants */
   enum varconst_dependence varconst_dep; /**< dependence of the varying fundamental constants as a function of time */
@@ -181,6 +189,15 @@ struct background
   int index_bg_rho_scf;       /**< scalar field energy density */
   int index_bg_p_scf;         /**< scalar field pressure */
   int index_bg_p_prime_scf;         /**< scalar field pressure */
+
+  /* Axion (Nhan) */
+  int index_bg_re_psi_ax;      /**< real part of wavefunction value */
+  int index_bg_im_psi_ax;      /**< imaginary part of wavefunction value */
+  int index_bg_phi_ax;         /**< scalar field value */
+  int index_bg_phi_prime_ax;   /**< scalar field derivative wrt conformal time */
+  int index_bg_rho_ax;         /**< axion energy density */
+  int index_bg_p_ax;           /**< axion pressure */
+  int index_bg_rho_no_ax;      /**< total background density excluding axion */
 
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
@@ -258,6 +275,10 @@ struct background
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
+  /* (Nhan) */
+  int index_bi_re_psi_ax;       /**< {B} real part of wavefunction value */
+  int index_bi_im_psi_ax;       /**< {B} imaginary part of wavefunction value */
+
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
   int index_bi_tau;     /**< {C} conformal time in Mpc */
@@ -284,6 +305,7 @@ struct background
   short has_dcdm;      /**< presence of decaying cold dark matter? */
   short has_dr;        /**< presence of relativistic decay radiation? */
   short has_scf;       /**< presence of a scalar field? */
+  short has_ax;        /**< presence of an axion? (Nhan) */
   short has_ncdm;      /**< presence of non-cold dark matter? */
   short has_lambda;    /**< presence of cosmological constant? */
   short has_fld;       /**< presence of fluid with constant w and cs2? */

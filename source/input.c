@@ -3371,6 +3371,31 @@ int input_read_parameters_species(struct file_content * pfc,
     }
   }
 
+  /** 9) Axion (Nhan)
+  /* Read */
+  class_call(parser_read_double(pfc,"phi_ini_ax",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  /* Test */
+  class_test((flag1 == _TRUE_) && (param1 < 0.),
+             errmsg,
+             "You have entered an invalid value 'phi_ini_ax' < 0. Please try again.");
+  /* Assign */
+  if (flag1 == _TRUE_){
+    pba->phi_ini_ax = param1;
+  }
+
+  /** If Axion initial field is larger 0 */
+  if (pba->phi_ini_ax > 0.){
+
+    /** Additional axion parameters */
+    class_read_double("mass_ax",pba->mass_ax);
+    class_read_double("lambda_ax",pba->lambda_ax);
+    pba->ma_over_hbar = ((pba->mass_ax*_eV_/_c_/_c_)*(_c_*_c_)/(_h_P_/2./_PI_))/_c_*_Mpc_over_m_;
+    class_read_double("eps_ax",pba->eps_ax);
+  }
+    
+
   return _SUCCESS_;
 
 }
@@ -5927,6 +5952,14 @@ int input_default_params(struct background *pba,
   pba->phi_prime_ini_scf = 1;          //     factors of the radiation attractor values
   /** 9.b.3) Tuning parameter */
   pba->scf_tuning_index = 0;
+
+  /** 10) Axion contribution (Nhan) */
+  pba->phi_ini_ax = 0.;
+  pba->mass_ax = 1.e-22;
+  pba->ma_over_hbar = ((1.e-22*_eV_/_c_/_c_)*(_c_*_c_)/(_h_P_/2./_PI_))/_c_*_Mpc_over_m_;
+  pba->lambda_ax = 0.;
+  pba->eps_ax = 3.;
+
 
   /**
    * Deafult to input_read_parameters_heating
