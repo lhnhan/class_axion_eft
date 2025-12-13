@@ -194,7 +194,7 @@ struct background
   int index_bg_re_psi_ax;      /**< real part of wavefunction value */
   int index_bg_im_psi_ax;      /**< imaginary part of wavefunction value */
   int index_bg_phi_ax;         /**< scalar field value */
-  int index_bg_phi_prime_ax;   /**< scalar field derivative wrt conformal time */
+  int index_bg_phi_dot_ax;     /**< scalar field derivative wrt proper time */
   int index_bg_rho_ax;         /**< axion energy density */
   int index_bg_p_ax;           /**< axion pressure */
   int index_bg_rho_no_ax;      /**< total background density excluding axion */

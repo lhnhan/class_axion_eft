@@ -32,7 +32,7 @@ AR        = ar rv
 # substitute python3 to python in the line below, or you can simply
 # add a compilation option on the terminal command line:
 # "PYTHON=python3 make all" (Thanks to Marius Millea for python3 compatibility)
-PYTHON ?= python
+# PYTHON ?= python
 
 # your optimization flag
 OPTFLAG = -O3
@@ -166,9 +166,10 @@ H_ALL = $(addprefix include/, common.h svnversion.h $(addsuffix .h, $(basename $
 PRE_ALL = cl_ref.pre clt_permille.pre
 INI_ALL = explanatory.ini lcdm.ini
 MISC_FILES = Makefile CPU psd_FD_single.dat myselection.dat myevolution.dat README bbn/sBBN.dat external_Pk/* cpp
-PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_class.py
+# PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_class.py
 
-all: class libclass.a classy
+# all: class libclass.a classy
+all: class libclass.a
 
 libclass.a: $(TOOLS) $(SOURCE) $(EXTERNAL)
 	$(AR)  $@ $(addprefix build/, $(TOOLS) $(SOURCE) $(EXTERNAL))
@@ -203,21 +204,24 @@ test_background: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_BACKGROUND)
 test_hyperspherical: $(TOOLS) $(TEST_HYPERSPHERICAL)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o test_hyperspherical $(addprefix build/,$(notdir $^)) -lm
 
-tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
-	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
+# tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
+# 	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
 
-classy: libclass.a python/classy.pyx python/cclassy.pxd
-	export CC=$(CC); output=$$($(PYTHON) -m pip install . 2>&1); \
-    echo "$$output"; \
-    if echo "$$output" | grep -q "ERROR: Cannot uninstall"; then \
-        site_packages=$$($(PYTHON) -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())" || $(PYTHON) -c "import site; print(site.getsitepackages()[0])") && \
-        echo "Cleaning up previous installation in: $$site_packages" && \
-        rm -rf $$site_packages/classy* && \
-        $(PYTHON) -m pip install .; \
-    fi
+tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC)
+	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC)
+
+# classy: libclass.a python/classy.pyx python/cclassy.pxd
+# 	export CC=$(CC); output=$$($(PYTHON) -m pip install . 2>&1); \
+#     echo "$$output"; \
+#     if echo "$$output" | grep -q "ERROR: Cannot uninstall"; then \
+#         site_packages=$$($(PYTHON) -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())" || $(PYTHON) -c "import site; print(site.getsitepackages()[0])") && \
+#         echo "Cleaning up previous installation in: $$site_packages" && \
+#         rm -rf $$site_packages/classy* && \
+#         $(PYTHON) -m pip install .; \
+#     fi
 
 clean: .base
 	rm -rf $(WRKDIR);
 	rm -f libclass.a
-	rm -f $(MDIR)/python/classy.c
+# 	rm -f $(MDIR)/python/classy.c
 	rm -rf $(MDIR)/python/build

@@ -592,18 +592,16 @@ int background_functions(
     if (m_over_H < pba->eps_ax) {
       pvecback[pba->index_bg_rho_ax] = (sqr_m/3.)*sqr_psi; // exact energy of the axion.
       pvecback[pba->index_bg_p_ax] = - (sqr_m/3.)*(cos_2mt*(re_psi*re_psi - im_psi*im_psi) + 2.*sin_2mt*re_psi*im_psi); // exact pressure of the axion.
-      /** Compute phi from psi: */
-      cos_mt = cos(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
-      sin_mt = sin(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
-      pvecback[pba->index_bg_phi_ax] = sqrt(2.)*(cos_mt*re_psi + sin_mt*im_psi);
-      pvecback[pba->index_bg_phi_prime_ax] = sqrt(2.)*pba->ma_over_hbar*(cos_mt*im_psi - sin_mt*re_psi);
     } else {
       pvecback[pba->index_bg_rho_ax] = sqr_m*(sqr_psi/3. + sqr_psi*sqr_psi/32.); // effective energy of the axion.
       pvecback[pba->index_bg_p_ax] = (9./32.)*sqr_m*sqr_psi*sqr_psi; // effective pressure of the axion.
-      /** Compute phi from psi: */
-      pvecback[pba->index_bg_phi_ax] = 0.; //Recovering scalar field
-      pvecback[pba->index_bg_phi_prime_ax] = 0.; //Recovering scalar field
     }
+    /** Compute phi from psi: */
+    cos_mt = cos(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+    sin_mt = sin(pba->ma_over_hbar*pvecback_B[pba->index_bi_time]);
+    pvecback[pba->index_bg_phi_ax] = sqrt(2.)*(cos_mt*re_psi + sin_mt*im_psi);
+    pvecback[pba->index_bg_phi_dot_ax] = sqrt(2.)*pba->ma_over_hbar*(cos_mt*im_psi - sin_mt*re_psi);
+    /** Add axion to total matter budget */
     rho_tot += pvecback[pba->index_bg_rho_ax];
     p_tot += pvecback[pba->index_bg_p_ax];
     dp_dloga += 0.0;
@@ -1128,7 +1126,7 @@ int background_indices(
   class_define_index(pba->index_bg_re_psi_ax,pba->has_ax,index_bg,1);
   class_define_index(pba->index_bg_im_psi_ax,pba->has_ax,index_bg,1);
   class_define_index(pba->index_bg_phi_ax,pba->has_ax,index_bg,1);
-  class_define_index(pba->index_bg_phi_prime_ax,pba->has_ax,index_bg,1);
+  class_define_index(pba->index_bg_phi_dot_ax,pba->has_ax,index_bg,1);
   class_define_index(pba->index_bg_rho_ax,pba->has_ax,index_bg,1);
   class_define_index(pba->index_bg_p_ax,pba->has_ax,index_bg,1);
   class_define_index(pba->index_bg_rho_no_ax,pba->has_ax,index_bg,1);
@@ -2635,7 +2633,7 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_re_psi_ax],pba->has_ax,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_im_psi_ax],pba->has_ax,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_phi_ax],pba->has_ax,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_ax],pba->has_ax,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_phi_dot_ax],pba->has_ax,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_no_ax],pba->has_ax,storeidx);
 
     class_store_double(dataptr,pvecback[pba->index_bg_rho_tot],_TRUE_,storeidx);
